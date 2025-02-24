@@ -54,7 +54,7 @@ public class SensorWebSocketHandler extends TextWebSocketHandler {
         double temperature = sensorService.measureTemperature();
         double co2Level = sensorService.measureCO2();
 
-        insert(temperature, co2Level);
+        //insert(temperature, co2Level);
 
         List<SensorData> sensorReadings = List.of(
                 SensorData.builder()
