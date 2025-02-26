@@ -15,6 +15,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import sensor.sensorservice.dto.SensorDataDTO;
 import sensor.sensorservice.model.SensorData;
 import sensor.sensorservice.service.interfaces.SensorService;
 
@@ -41,13 +42,37 @@ public class SensorWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessions.add(session);
-        log.info("Connected from session " + session.getId());
+        log.info("Connected from session {}", session.getId());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessions.remove(session);
-        log.info("Disconnected from session " + session.getId());
+        log.info("Disconnected from session {}", session.getId());
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        String payload = message.getPayload();
+        log.info("Received message from session {}", session.getId());
+
+        try {
+            SensorDataDTO receivedData = objectMapper.readValue(payload, SensorDataDTO.class);
+            log.info("Parsed data: {}", receivedData);
+
+            String processedData = processReceivedData(receivedData);
+
+            log.info("Sending data back to session " + session.getId());
+            session.sendMessage(new TextMessage(processedData));
+        } catch (Exception e) {
+            log.error("Error processing received WebSocket message", e);
+            session.sendMessage(new TextMessage("Error processing data"));
+        }
+    }
+
+    private String processReceivedData(SensorDataDTO data) {
+        log.info("Processing received data: {}", data);
+        return "Thank you for sending the information about the sensor " + data.type() + " with a value of " + data.value() + " at " + data.timestamp();
     }
 
     public void sendData() throws Exception {
